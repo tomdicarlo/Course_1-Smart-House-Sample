@@ -10,6 +10,7 @@ import { DisplayStyleSettingsProps } from "@bentley/imodeljs-common";
 import { Visualization } from "./Visualization"
 import { SmartDeviceDecorator } from "./components/decorators/SmartDeviceDecorator";
 import { SmartDeviceUiItemsProvider } from "./providers/SmartDeviceUiItemsProvider";
+import { MarkerPinStyleWidgetProvider } from "./components/widgets/MarkerPinStyleWidget";
 
 const App: React.FC = () => {
   const [isAuthorized, setIsAuthorized] = useState(
@@ -18,6 +19,7 @@ const App: React.FC = () => {
       : false
   );
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [decorator, setDecorator] = useState<SmartDeviceDecorator | undefined>()
 
   useEffect(() => {
     const initOidc = async () => {
@@ -66,6 +68,11 @@ const App: React.FC = () => {
     setIsAuthorized(false);
   };
 
+  const handleMarkerPinStyleWidgetToggle = (worldDecoration: boolean) => {
+    if(decorator)
+      decorator.setWorldDecoration(worldDecoration)
+  }
+
   const onIModelConnected = (_imodel: IModelConnection) => {
 
     IModelApp.viewManager.onViewOpen.addOnce(async (vp: ScreenViewport) => {
@@ -79,7 +86,9 @@ const App: React.FC = () => {
 
       vp.overrideDisplayStyle(viewStyle);
       Visualization.hideHouseExterior(vp);
-      IModelApp.viewManager.addDecorator(new SmartDeviceDecorator(vp));
+      const newDecorator = new SmartDeviceDecorator(vp);
+      setDecorator(newDecorator);
+      IModelApp.viewManager.addDecorator(newDecorator);
     })
 
   }
@@ -100,7 +109,7 @@ const App: React.FC = () => {
             iModelId={process.env.IMJS_IMODEL_ID ?? ""}
             authConfig={{ oidcClient: AuthorizationClient.oidcClient }}
             onIModelConnected={onIModelConnected}
-            uiProviders={[new SmartDeviceUiItemsProvider()]}
+            uiProviders={[new MarkerPinStyleWidgetProvider(handleMarkerPinStyleWidgetToggle), new SmartDeviceUiItemsProvider()]}
           />
         )
       )}

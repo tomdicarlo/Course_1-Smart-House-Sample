@@ -1,17 +1,28 @@
-import { DecorateContext, Decorator, IModelConnection, Marker, ScreenViewport } from "@bentley/imodeljs-frontend";
-import { SmartDeviceMarker } from "../markers/SmartDeviceMarker";
+import { DecorateContext, Decorator, IModelApp, IModelConnection, Marker, ScreenViewport } from "@bentley/imodeljs-frontend";
+import { SmartDeviceMarkerDecoration } from "../markers/SmartDeviceMarkerDecoration";
+import { SmartDeviceMarkerOverlay } from "../markers/SmartDeviceMarkerOverlay";
 import { SmartDeviceAPI } from "../../SmartDeviceAPI";
 import { UiFramework } from "@bentley/ui-framework";
 
 export class SmartDeviceDecorator implements Decorator {
   private _iModel: IModelConnection;
-  private _markerSet: Marker[];
+  private _markerDecorationSet: Marker[];
+  private _markerOverlaySet: Marker[];
+
+  private _worldDecoration: boolean;
 
   constructor(vp: ScreenViewport) {
     this._iModel = vp.iModel;
-    this._markerSet = [];
+    this._markerDecorationSet = [];
+    this._markerOverlaySet = [];
+    this._worldDecoration = true;
 
     this.addMarkers();
+  }
+
+  public setWorldDecoration(worldDecoration: boolean) {
+    this._worldDecoration = worldDecoration
+    IModelApp.viewManager.invalidateDecorationsAllViews()
   }
 
   public static async getSmartDeviceData() {
@@ -38,7 +49,7 @@ export class SmartDeviceDecorator implements Decorator {
     const cloudData = await SmartDeviceAPI.getData();
 
     values.forEach(value => {
-      const smartDeviceMarker = new SmartDeviceMarker(
+      const smartDeviceMarkerDecoration = new SmartDeviceMarkerDecoration(
         { x: value.origin.x, y: value.origin.y, z: value.origin.z },
         { x: 40, y: 40 },
         value.smartDeviceId,
@@ -47,13 +58,29 @@ export class SmartDeviceDecorator implements Decorator {
         value.id
       );
 
-      this._markerSet.push(smartDeviceMarker);
+      const smartDeviceMarkerOverlay = new SmartDeviceMarkerOverlay(
+        { x: value.origin.x, y: value.origin.y, z: value.origin.z },
+        { x: 40, y: 40 },
+        value.smartDeviceId,
+        value.smartDeviceType,
+        cloudData[value.smartDeviceId],
+        value.id
+      );
+
+      this._markerDecorationSet.push(smartDeviceMarkerDecoration);
+      this._markerOverlaySet.push(smartDeviceMarkerOverlay);
     })
   }
 
   public decorate(context: DecorateContext): void {
-    this._markerSet.forEach(marker => {
-      marker.addDecoration(context);
-    })
+    if(this._worldDecoration) {
+      this._markerDecorationSet.forEach(marker => {
+        marker.addDecoration(context);
+      })
+    } else {
+      this._markerOverlaySet.forEach(marker => {
+        marker.addDecoration(context);
+      })
+    }
   }
 }

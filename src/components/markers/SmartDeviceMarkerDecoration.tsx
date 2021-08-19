@@ -3,7 +3,7 @@ import { ColorDef, GraphicParams, ImageSource, RenderMaterial, RenderTexture, Te
 import { Marker, BeButtonEvent, IModelApp, NotifyMessageDetails, OutputMessagePriority, StandardViewId, DecorateContext, GraphicType, imageElementFromUrl, RenderSystem } from "@bentley/imodeljs-frontend";
 import { ModelsTree } from "@bentley/ui-framework";
 
-export class SmartDeviceMarker extends Marker {
+export class SmartDeviceMarkerDecoration extends Marker {
   private _smartDeviceId: string;
   private _smartDeviceType: string;
   private _elementId: string;
@@ -59,6 +59,7 @@ export class SmartDeviceMarker extends Marker {
   }
 
   public async addMarker(context: DecorateContext) {
+    console.log('adding marker')
     // Setup the marker selection
     super.addMarker(context)
     
